@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Snake-game</title>
+
+
+	<style>
+		body {
+			background-color: #E0FFFF;
+			text-align: center;
+		}
+
+		canvas {
+			border-style: solid;
+			border-width:  10px;
+			border-color: black;
+		}
+
+		h1 {
+			font-family: sans-serif;
+			font-weight: bold;
+			font-size: 80px;
+			margin-top: 20px;
+		}
+
+		h1 strong {
+			font-size: 150px;
+			display: inline-block;
+		}
+	</style>
+</head>
+<body>
+	
+
+
+
+	<canvas width='600' height='600'></canvas>
+	<h1>0</h1>
+	
+	<script>
+		// listeners
+		document.addEventListener('keydown',keyPush)
+
+		// canvas
+		let canvas = document.querySelector('canvas')
+		let title = document.querySelector('h1')
+		let ctx = canvas.getContext('2d')
+		
+		// game
+
+		let gameIsRunning = true
+
+		let tileSize = 50
+		let score = 0
+		let fps = 10
+		let tileCountX = canvas.width / tileSize
+		let tileCountY = canvas.height / tileSize
+
+		// player
+		let snakeSpeed = tileSize
+		let snakePosX = 0
+		let snakePosY = canvas.height / 2
+
+		let velocityX = 1
+		let velocityY = 0
+
+		let tail = []
+		let snakeLength = 2
+		
+		// food
+		let foodPosX = 0
+		let foodPosY = 0
+
+		// loop
+		function gameLoop () {
+			if (gameIsRunning) {
+			drawStuff ()
+			moveStuff ()
+			setTimeout(gameLoop, 1000 / fps)
+			}
+		}
+		
+		resetFood()
+		gameLoop()
+
+		// MOVE EVERYTHING
+		function moveStuff () {
+			snakePosX = snakePosX + snakeSpeed * velocityX
+			snakePosY = snakePosY + snakeSpeed * velocityY
+
+			// wall collision
+			if ( snakePosX > canvas.width -tileSize) {
+				snakePosX = 0
+			}
+
+			if (snakePosX < 0) {
+				snakePosX = canvas.width
+			}
+
+			if (snakePosY > canvas.height -tileSize) {
+				snakePosY = 0
+			}
+
+			if (snakePosY < 0) {
+				snakePosY = canvas.height
+			}
+
+			// GAME OVER
+			tail.forEach((snakePart) => {
+				if (snakePosX === snakePart.x && snakePosY === snakePart.y) {
+					gameOver()
+				}
+			})
+			
+			// tail
+			tail.push({ x: snakePosX, y: snakePosY})
+
+			// forget earliest parts of snake
+			tail = tail.slice(-1 * snakeLength)
+
+			// food collision
+			if (snakePosX === foodPosX && snakePosY === foodPosY) {
+				score = score + 1
+				title.textContent = score
+				snakeLength = snakeLength + 1
+				resetFood()
+			}
+		}
+
+		// DRAW EVERYTHING
+		function drawStuff () {
+			
+			// background
+			rectangle('#48D1CC',0,0,canvas.width,canvas.height)
+			
+			// grid
+			drawGrid()
+
+			// food
+			rectangle('#DC143C',foodPosX,foodPosY,tileSize,tileSize)
+			
+			// tail
+			tail.forEach((snakePart) =>
+				rectangle('#00BFFF', snakePart.x, snakePart.y, tileSize, tileSize)
+			) 
+			// snake
+			rectangle('#1E90FF',snakePosX,snakePosY,tileSize,tileSize)
+		}
+
+		// draw rectangle
+		function rectangle (color,x,y,width,height) {
+			ctx.fillStyle = color
+			ctx.fillRect(x,y,width,height)
+		}
+
+		// randomize food position
+		function resetFood () {
+			
+			// GAME OVER (nowhere to go)
+			if (snakeLength === tileCountX * tileCountY) {
+				gameOver()
+			}
+
+			foodPosX = Math.floor(Math.random() * tileCountX) * tileSize
+			foodPosY = Math.floor(Math.random() * tileCountY) * tileSize
+
+			// dont spawn food on snakes head
+			if (foodPosX === snakePosX && foodPosY === snakePosY) {
+				resetFood()
+			}
+
+			// dont spawn food on snakes body
+			if (
+				tail.some(
+					(snakePart) => snakePart.x === foodPosX && snakePart.y === foodPosY
+				)
+			) {
+				resetFood()
+			}
+		}
+
+		// game over
+		function gameOver () {
+			title.innerHTML = `<strong> Your score: ${score} </strong>`
+			gameIsRunning = false
+		}
+		
+		// keyboard
+		function keyPush () {
+			switch(event.key) {
+					case 'ArrowUp':
+						if ( velocityY !== 1) {
+							velocityX = 0
+							velocityY = -1
+						}
+						break
+					
+					case 'ArrowDown':
+						if (velocityY !== -1) {
+							velocityX = 0
+							velocityY = 1
+						}
+						break
+
+					case 'ArrowLeft':
+						if (velocityX !== 1) {
+							velocityX = -1
+							velocityY = 0
+						}
+						break
+
+					case 'ArrowRight':
+						if (velocityX !== -1) {
+							velocityX = 1
+							velocityY = 0
+						}
+						break
+					
+					
+					default:						
+						// restart game
+						if ( !gameIsRunning) location.reload()
+						break
+			}
+		}
+
+		// grid
+		function drawGrid () {
+			for (let i = 0; i < tileCountX; i=i+1) {
+				for (let j = 0; j < tileCountY; j=j+1) {
+				rectangle('white', tileSize * i, tileSize * j, tileSize-1, tileSize-1)
+				}
+			}
+		}
+	</script>
+</body>
+</html>
